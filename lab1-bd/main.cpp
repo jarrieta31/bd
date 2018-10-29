@@ -344,9 +344,12 @@ TipoRet deleteFrom(string nombreTabla, string condicion){
                 auxTupla = auxTupla->sig;
             }
             ordenarIndices(auxTupla);
+            return res;
         }
         else{
             cout<< "No hay campo con ese nombre"<<endl;
+            res = ERROR;
+            return res;
         }
 
     }
@@ -426,7 +429,7 @@ TipoRet printDataTable(string nombreTabla){
                             cout<<"  "<< auxCelda->info;
                         if( auxCelda->nroCelda > 1 && auxCelda->sig != NULL )
                             cout<<":"<< auxCelda->info;
-                        if( auxCelda->sig == NULL )
+                        if( auxCelda->sig == NULL && auxCelda->nroCelda > 1)
                             cout<<":"<< auxCelda->info <<endl;
                     }
                 }
@@ -489,21 +492,6 @@ void readInput(ListaTabla LTabla, string comando){
 
     string nombreTabla = getParametro(listaArg,1); //Obtiene el nombre de la tabla
 
-    extern int test;
-    if( test == 0 ){
-        createTable("Empleados");
-        addCol("Empleados", "Id");
-        addCol("Empleados", "Nombre");
-        addCol("Empleados", "Apellido");
-        addCol("Empleados", "Direccion");
-        insertInto("Empleados", "3976069-5:Juan:Garcia:Emilio Frugoni 740");
-        insertInto("Empleados", "4239223-9:Maria:Gonzalez:18 de julio 2567");
-        insertInto("Empleados", "3968289-5:Pedro:Almodovar:Calle 13");
-        insertInto("Empleados", "2598099-3:Roberto:Gimenez:Av siempre vivas 1234");
-        insertInto("Empleados", "1928059-2:Ana:Perez:Asamblea 539");
-        test = 1;
-    }
-
     if( sentencia=="createTable" ){ //createTable( nombreTabla )
         res = createTable(nombreTabla);
         if( res == 0 )
@@ -559,7 +547,7 @@ void readInput(ListaTabla LTabla, string comando){
         if(  res == 0 )
             cout<< "\tQuery OK -> El registro fue eliminado "<<endl;
         if( res == 1)
-            cout<< "\tQuery ERROR -> Ningun registro ha sido eliminado"<<endl;
+            cout<< "\tQuery ERROR -> Se produjo un error al intentar eliminar registros"<<endl;
         if( res == 2 )
             cout<< "\tQuery ERROR -> No se realizo la operacion"<<endl;
 
@@ -806,19 +794,6 @@ int buscaColuma(ListaColum L, string nombreColum){
     }
     return 1000;
 }
-/*
-ListaCelda buscaCelda(ListaCelda L, int nroCelda){
-    if( L == NULL)
-        return NULL;
-    if( L->nroCelda != nroCelda ){
-        addTuplaOrdenada(auxTupla, pk, listaValores)
-        return buscaCelda( L->sig, nroCelda);
-    }
-    else
-        return L;
-}
-
-*/
 
 bool addTuplaOrdenada(ListaTupla &auxTupla, string pk, ListaArg listaValores){//agrega una nueva tupla de forma ordenada
     ListaTupla sonda = auxTupla;
@@ -903,11 +878,6 @@ char getOperador(string condicion){//Obtiene el operador para las comparaciones 
 }
 
 void ordenarIndices(ListaTupla &auxTupla){//Ordena los indices de las tuplas
-   /* if( auxTupla )
-    while( auxTupla != NULL && auxTupla->ant != NULL )
-        auxTupla = auxTupla->ant;
-    auxTupla = auxTupla->sig;
-    */
     while( auxTupla != NULL && auxTupla->indice!=0 ){
         auxTupla->indice = auxTupla->ant->indice + 1;
         auxTupla = auxTupla->sig;
