@@ -326,13 +326,18 @@ TipoRet deleteFrom(string nombreTabla, string condicion){
     auxTabla = buscaTabla(LTabla, nombreTabla); //si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
     if( auxTabla != NULL){
         int nroColumna = buscaColuma(auxTabla->columna, nombreColumna); //si el nombre de la columna existe retorna su posicion, si no retorna 1000
-        if( nroColumna != 1000){ //Chequea que exista la columna
-            auxTupla = auxTabla->tupla; //Puntero auxiliar para recorrer las tuplas
+        if( nroColumna != 1000 ){ //Chequea que exista la columna
+            auxTupla = auxTabla->tupla->sig; //Puntero auxiliar para recorrer las tuplas
             while( auxTupla!= NULL ){
-
                 auxCelda = auxTupla->celda;
-                if( compararCelda( auxCelda, nroColumna, operador, valorCondicion) ){
-                    cout<<"El registro nro "<< auxTupla->indice <<" contiene: "<< auxCelda->sig->sig->info<<" "<<auxCelda->sig->sig->sig->info  <<endl;
+                if( !condicion.empty() ){
+                    if( compararCelda( auxCelda, nroColumna, operador, valorCondicion) ){
+                        cout<<"El registro nro "<< auxTupla->indice <<" contiene: "<< auxCelda->sig->sig->info<<" "<<auxCelda->sig->sig->sig->info  <<endl;
+                        borrarCeldasTupla(auxCelda);
+                        borrarTupla(auxTupla);
+                    }
+                }
+                if( condicion.empty() ){
                     borrarCeldasTupla(auxCelda);
                     borrarTupla(auxTupla);
                 }
@@ -358,22 +363,23 @@ TipoRet update(string nombreTabla, string condicionModificar, string columnaModi
     cargarListaArg(listaCondicion, condicionModificar, operador); // Separa ambas partes de la condicion
     string columnaCondicion = getParametro(listaCondicion,1);// Nombre de la columna por la cual filtrar
     string valorCondicion   = getParametro(listaCondicion,2); //Valor que debe cumplir el filtro
-
     auxTabla = buscaTabla(LTabla, nombreTabla); //si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
     if( auxTabla != NULL){
         int nroColumnaMod = buscaColuma(auxTabla->columna, columnaModificar); //si el nombre de la columna existe retorna su posicion, si no retorna 1000
+        if( nroColumnaMod == 1 )
+            return res = ERROR;
         int nroColumnaCond = buscaColuma(auxTabla->columna, columnaCondicion);
         if( nroColumnaCond != 1000  && nroColumnaMod != 1000 ){ //Chequea que existan ambas columnas en la tabla
-            auxTupla = auxTabla->tupla; //Puntero auxiliar para recorrer las tuplas
+            auxTupla = auxTabla->tupla->sig; //Puntero auxiliar para recorrer las tuplas
             while( auxTupla!= NULL ){
-
                 auxCelda = auxTupla->celda;
-                if( !condicionModificar.empty() ){
+                if( !columnaCondicion.empty() ){
                     if( compararCelda( auxCelda, nroColumnaCond, operador, valorCondicion) ){
                         cout<<"El registro nro "<< auxTupla->indice <<" contiene: "<< auxCelda->sig->sig->info<<" "<<auxCelda->sig->sig->sig->info  <<endl;
                         modificarCelda( auxCelda, nroColumnaMod, valorModificar);
                     }
-                }else{
+                }
+                if( columnaCondicion.empty() ){//Si no se escribe ninguna condicion se aplica para todos registros la acctualizacion
                     modificarCelda( auxCelda, nroColumnaMod, valorModificar);
                 }
                 auxTupla = auxTupla->sig;
@@ -593,12 +599,17 @@ string getParametro(ListaArg L, int n){
 }
 
 void borrarTupla(ListaTupla &auxTupla){
-    ListaTupla borrar = auxTupla;
-    auxTupla = auxTupla->ant;   //se mueve un lugar hacia atras para borrar el nodo actual
-    auxTupla->sig = borrar->sig;
-    if( borrar->sig != NULL )
-        borrar->sig->ant = auxTupla;
-    delete borrar;
+    if( auxTupla == NULL )
+        return;
+    if( auxTupla->ant != NULL ){
+        ListaTupla borrar = auxTupla;
+        auxTupla = auxTupla->ant;
+        auxTupla->sig = borrar->sig;
+        if( borrar->sig!= NULL){
+            borrar->sig->ant = borrar->ant;
+        }
+        delete borrar;
+    }
 }
 
 void borrarCelda(ListaCelda &auxCelda, int nroCelda){
@@ -614,10 +625,18 @@ void borrarCelda(ListaCelda &auxCelda, int nroCelda){
 }
 
 void borrarCeldasTupla(ListaCelda &auxCelda){//borra todas las celdas
-    while( auxCelda!=NULL ){
+    if( auxCelda==NULL)
+        return;
+    if( auxCelda->sig==NULL ){
         ListaCelda borrar = auxCelda;
-        auxCelda = auxCelda->sig;
+        auxCelda = NULL;
         delete borrar;
+        return;
+    }else{
+        ListaCelda borrar = auxCelda->sig;
+        auxCelda->sig = borrar->sig;
+        delete borrar;
+        borrarCeldasTupla(auxCelda->sig);
     }
 }
 
@@ -633,41 +652,44 @@ ListaTupla buscaTuplaValor(ListaTupla L, int nroColumna, char operador, string v
 }
 /*** Va hasta el nroCelda indicado, realiza la comparacion y retorna un bool **/
 bool compararCelda(ListaCelda L, int nroCelda, char operador, string valor){
-    while( L->sig!= NULL && L->nroCelda != nroCelda ){
+    while( L->sig!=NULL && L->nroCelda!= nroCelda ){
         L = L->sig;
     }
+        if( operador == '=' ){
+            if( valor.compare(L->info) == 0 )
+                return true;
+        else
+            return false;
+        }
+        if( operador == '<' ){
+            if( valor.compare(L->info) < 0 )
+                return true;
+            else
+                return false;
+        }
 
-    if( operador == '=' ){
-        if( valor.compare(L->info) == 0 )
-            return true;
-        else
-            return false;
-    }
-    if( operador == '<' ){
-        if( valor.compare(L->info) < 0 )
-            return true;
-        else
-            return false;
-    }
-    if( operador == '>' ){
-        if( valor.compare(L->info) > 0 )
-            return true;
-        else
-            return false;
-    }
-    if( operador == '!' ){
-        if( valor.compare(L->info) != 0 )
-            return true;
-        else
-            return false;
-    }
+        if( operador == '>' ){
+            if( valor.compare(L->info) > 0 )
+                return true;
+            else
+                return false;
+        }
 
-    if( operador == '*' ){
-        if( comienzaCon(valor, L->info) )
+        if( operador == '!' ){
+            if( valor.compare(L->info) != 0 )
+                return true;
+            else
+                return false;
+        }
+
+        if( operador == '*' ){
+            if( comienzaCon(valor, L->info) )
+                return true;
+            else
+                return false;
+        }
+        if( operador == '+' ) //Si no hay operador de comparacion se recibe + para representar todos los registros
             return true;
-        else
-            return false;
-    }
 
 }
 
@@ -886,7 +908,7 @@ void ordenarIndices(ListaTupla &auxTupla){//Ordena los indices de las tuplas
         auxTupla = auxTupla->ant;
     auxTupla = auxTupla->sig;
     */
-    while( auxTupla != NULL ){
+    while( auxTupla != NULL && auxTupla->indice!=0 ){
         auxTupla->indice = auxTupla->ant->indice + 1;
         auxTupla = auxTupla->sig;
     }
