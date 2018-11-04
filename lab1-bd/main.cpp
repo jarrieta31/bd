@@ -64,28 +64,28 @@ TipoRet deleteFrom(string nombreTabla, string condicionEliminar);
 TipoRet update(string nombreTabla, string condicionModificar, string columnaModificar, string valorModificar );
 TipoRet printDataTable(string nombreTabla);
 
-/** FUNCIONES AUXILIARES */
-void readInput(ListaTabla T, string comando ); //Interpreta el comando de entrada
-void printHelp(); // Imprime la Ayuda con los comandos validos
-bool addTabla( ListaTabla T, string nombreTabla );
-string getParametro(ListaArg L, int n);
-ListaArg crearListaArg();
-void imprimirArg(ListaArg L);
-void clearArg(ListaArg L);
-void addArgFinal(ListaArg L, string arg);
+/** FUNCIONES Y PROCEDIMIENTOS AUXILIARES */
+void leerComando(ListaTabla T, string comando ); //Interpreta el comando de entrada
+void mostrarAyuda(); // Imprime la Ayuda con los comandos validos
+//bool addTabla( ListaTabla T, string nombreTabla ); //Crea un nuevo nodo tipo tabla
+string traerParametro(ListaArg L, int n);  //Trae del a posicion n un valor tipo string de la lista de parametros
+ListaArg crearListaArg();               //Crea una lista para guardar parametros
+void imprimirArg(ListaArg L);           //Imprime los argumentos de la lista
+//void clearArg(ListaArg L);
+void agregarArg(ListaArg L, string arg); //Agrega un nuevo parametro al final de la lista de parametros
 void cargarListaArg(ListaArg L, string allArg, char separador);
-ListaTabla buscaTabla(ListaTabla &LTabla, string nombreTabla);
-int buscaColuma(ListaColum L, string nombreColum); //Busca una columna por su nombre y retorna su posicion
+ListaTabla buscarTabla(ListaTabla &LTabla, string nombreTabla); //Si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
+int buscarColumna(ListaColum L, string nombreColum); //Busca una columna por su nombre y retorna su posicion
 bool compararCelda(ListaCelda L, int nroCelda, char operador, string valor); //compara celdas y retorna un boolean
-bool buscaTuplaPk(ListaTupla &sonda, string pk);//Recibe la pk y busca la tupla que lo tenga, si no esta devuelve NULL
-bool addTuplaOrdenada(ListaTupla &auxTupla, string pk, ListaArg listaValores);//agrega una nueva tupla de forma ordenada por su pk
-void addTuplaFinal(ListaTupla &auxTupla, ListaArg listaValores);    //agrega una nueva tupla al final de la lista
-void addTuplaSiguiente(ListaTupla &auxTupla, ListaArg listaValores);//agrega la siguiente tupla a la posicion actual
-void addCeldaFinal(ListaCelda &auxCelda, string dato);//agrega nueva celda al final de la lista
-void ordenarIndices(ListaTupla &auxTupla);
-void cargarTupla(ListaTupla &auxTupla, ListaArg listaArg);
-int lengthArg(ListaArg L);
-char getOperador( string condicion);
+bool buscarTuplaPorPK(ListaTupla &sonda, string pk);//Recibe la pk y busca la tupla que lo tenga, si no esta devuelve NULL
+bool agregarTuplaOrdenada(ListaTupla &auxTupla, string pk, ListaArg listaValores);//agrega una nueva tupla de forma ordenada por su pk
+void agregarTuplaFinal(ListaTupla &auxTupla, ListaArg listaValores);    //agrega una nueva tupla al final de la lista
+void agregarTuplaSiguiente(ListaTupla &auxTupla, ListaArg listaValores);//agrega la siguiente tupla a la posicion actual
+//void agregarCeldaFinal(ListaCelda &auxCelda, string dato);//agrega nueva celda al final de la lista
+void ordenarIndices(ListaTupla &auxTupla);     //Recorre todas las tuplas ordenando los indices cuando una es eliminada
+void cargarTupla(ListaTupla &auxTupla, ListaArg listaArg); //Llena un registro con la lista de argumentos recibidos en forma de lista
+int lengthArg(ListaArg L);  //Obtiene el largo de una lista de parametros
+char traerOperador( string condicion); //Recibe una condicion en forma de string y recupera el operador utilizado retornandolo como char
 ListaTupla buscaTuplaValor(ListaTupla L, int nroColumna, char operador, string valor); //retorna un puntero a la tupla buscada
 void borrarTupla(ListaTupla &auxTupla); //Borra la tupla actual
 void borrarCeldasTupla(ListaCelda &auxCelda);
@@ -106,7 +106,7 @@ int main(){
     while(comando!="exit"){ //mantiene la terminal esperando ordenes
         getline(cin, comando);
         if( comando.empty()!=true )
-            readInput(LTabla, comando);
+            leerComando(LTabla, comando);
         else
             cout << "\tNo ha ingresado ningun comando" <<endl;
     }
@@ -224,7 +224,7 @@ TipoRet dropCol(string nombreTabla, string nombreCol){
     ListaColum borraColum;
     ListaTupla auxTupla;
     ListaCelda auxCelda;
-    ListaCelda borraCelda;
+    ListaCelda borraCelda;https://www.google.com/
     /** Busca si existe la tabla **/
     while( auxTabla!=NULL ){
         if( auxTabla->nombre == nombreTabla ){ //Si existe la tabla, se para apuntando sobre ella
@@ -294,12 +294,12 @@ TipoRet insertInto(string nombreTabla, string valoresTupla){
     ListaTupla auxTupla = NULL;
     ListaArg listaValores = crearListaArg();            //crea una lista de valores para recibir los argumentos
     cargarListaArg(listaValores, valoresTupla, ':');    //carga los valores en una lista
-    auxTabla = buscaTabla(LTabla, nombreTabla); //si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
+    auxTabla = buscarTabla(LTabla, nombreTabla); //si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
     if( auxTabla != NULL){
         if( auxTabla->nroColumna == lengthArg(listaValores) ){//Chequea si la cantidad de valores pasados es igual a los campos que tiene a tabla
             auxTupla = auxTabla->tupla;
-            string pk = getParametro(listaValores, 1); //obtiene la pk cursada
-            if(addTuplaOrdenada(auxTupla, pk, listaValores)){  //Devuelve true si pudo insertar la tupla de forma ordenada
+            string pk = traerParametro(listaValores, 1); //obtiene la pk cursada
+            if(agregarTuplaOrdenada(auxTupla, pk, listaValores)){  //Devuelve true si pudo insertar la tupla de forma ordenada
              //   cargarTupla(auxTupla, listaValores);
                 cout<<"\tNuevo registro agregado con exito"<<endl;
                 return res;
@@ -318,14 +318,14 @@ TipoRet deleteFrom(string nombreTabla, string condicion){
     ListaTabla auxTabla = NULL;                //Tabla auxiliar
     ListaTupla auxTupla = NULL;
     ListaCelda auxCelda = NULL;
-    char operador = getOperador(condicion); //obtiene el operador de la condicion a buscar
+    char operador = traerOperador(condicion); //obtiene el operador de la condicion a buscar
     ListaArg listaCondicion = crearListaArg(); //crea una lista con las condiciones
     cargarListaArg(listaCondicion, condicion, operador); // separa ambas partes de la condicion
-    string nombreColumna    = getParametro(listaCondicion,1);
-    string valorCondicion   = getParametro(listaCondicion,2);
-    auxTabla = buscaTabla(LTabla, nombreTabla); //si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
+    string nombreColumna    = traerParametro(listaCondicion,1);
+    string valorCondicion   = traerParametro(listaCondicion,2);
+    auxTabla = buscarTabla(LTabla, nombreTabla); //si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
     if( auxTabla != NULL){
-        int nroColumna = buscaColuma(auxTabla->columna, nombreColumna); //si el nombre de la columna existe retorna su posicion, si no retorna 1000
+        int nroColumna = buscarColumna(auxTabla->columna, nombreColumna); //si el nombre de la columna existe retorna su posicion, si no retorna 1000
         if( nroColumna != 1000 ){ //Chequea que exista la columna
             auxTupla = auxTabla->tupla->sig; //Puntero auxiliar para recorrer las tuplas
             while( auxTupla!= NULL ){
@@ -361,17 +361,17 @@ TipoRet update(string nombreTabla, string condicionModificar, string columnaModi
     ListaTabla auxTabla = NULL;                //Tabla auxiliar
     ListaTupla auxTupla = NULL;
     ListaCelda auxCelda = NULL;
-    char operador = getOperador(condicionModificar); //obtiene el operador de la condicion a buscar
+    char operador = traerOperador(condicionModificar); //obtiene el operador de la condicion a buscar
     ListaArg listaCondicion = crearListaArg();           //Crea una lista con las condiciones
     cargarListaArg(listaCondicion, condicionModificar, operador); // Separa ambas partes de la condicion
-    string columnaCondicion = getParametro(listaCondicion,1);// Nombre de la columna por la cual filtrar
-    string valorCondicion   = getParametro(listaCondicion,2); //Valor que debe cumplir el filtro
-    auxTabla = buscaTabla(LTabla, nombreTabla); //si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
+    string columnaCondicion = traerParametro(listaCondicion,1);// Nombre de la columna por la cual filtrar
+    string valorCondicion   = traerParametro(listaCondicion,2); //Valor que debe cumplir el filtro
+    auxTabla = buscarTabla(LTabla, nombreTabla); //si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
     if( auxTabla != NULL){
-        int nroColumnaMod = buscaColuma(auxTabla->columna, columnaModificar); //si el nombre de la columna existe retorna su posicion, si no retorna 1000
+        int nroColumnaMod = buscarColumna(auxTabla->columna, columnaModificar); //si el nombre de la columna existe retorna su posicion, si no retorna 1000
         if( nroColumnaMod == 1 )
             return res = ERROR;
-        int nroColumnaCond = buscaColuma(auxTabla->columna, columnaCondicion);
+        int nroColumnaCond = buscarColumna(auxTabla->columna, columnaCondicion);
         if( nroColumnaCond != 1000  && nroColumnaMod != 1000 ){ //Chequea que existan ambas columnas en la tabla
             auxTupla = auxTabla->tupla->sig; //Puntero auxiliar para recorrer las tuplas
             while( auxTupla!= NULL ){
@@ -443,7 +443,7 @@ TipoRet printDataTable(string nombreTabla){
     return res;
 }
 
-void printHelp(){
+void mostrarAyuda(){
     cout <<endl<< "AYUDA DE COMANDOS: "<<endl;
     cout << "Nota: todos los comandos son 'case sensitive' "<<endl;
     cout << "  help  _______________________________________________________________________* IMPRIME LA AYUDA EN PANTALLA *" <<endl<<endl;
@@ -466,7 +466,7 @@ void printHelp(){
 }
 
 /****************     LEE EL INGRESO DE LOS COMANDOS     ************************/
-void readInput(ListaTabla LTabla, string comando){
+void leerComando(ListaTabla LTabla, string comando){
     TipoRet res;
     string caracter;
     int nroComas =0;
@@ -490,7 +490,7 @@ void readInput(ListaTabla LTabla, string comando){
     ListaArg listaArg = crearListaArg();
     cargarListaArg(listaArg, allArg, ',');
 
-    string nombreTabla = getParametro(listaArg,1); //Obtiene el nombre de la tabla
+    string nombreTabla = traerParametro(listaArg,1); //Obtiene el nombre de la tabla
 
     if( sentencia=="createTable" ){ //createTable( nombreTabla )
         res = createTable(nombreTabla);
@@ -509,7 +509,7 @@ void readInput(ListaTabla LTabla, string comando){
     }
 
     if( sentencia == "addCol" ) {//addCol( nombreTabla, nombreCol )
-        string nombreColumna = getParametro(listaArg, 2);//obtiene e nombre de la columna ha agregar
+        string nombreColumna = traerParametro(listaArg, 2);//obtiene e nombre de la columna ha agregar
         res = addCol(nombreTabla, nombreColumna);
         if(  res == 0 )
             cout<< "\tQuery OK -> La columna \""<<nombreColumna<<"\" ha sido creada"<<endl;
@@ -520,7 +520,7 @@ void readInput(ListaTabla LTabla, string comando){
     }
 
     if( sentencia == "dropCol" ){ //   dropCol( nombreTabla, nombreCol)
-        string nombreColumna = getParametro(listaArg, 2);
+        string nombreColumna = traerParametro(listaArg, 2);
         res = dropCol(nombreTabla, nombreColumna);
         if(  res == 0 )
             cout<< "\tQuery OK -> La columna \""<<nombreColumna<<"\" ha sido eliminada"<<endl;
@@ -531,7 +531,7 @@ void readInput(ListaTabla LTabla, string comando){
     }
 
     if( sentencia == "insertInto" ){// insertInto( nombreTabla,valoresTupla")
-        string valoresTupla = getParametro(listaArg, 2);
+        string valoresTupla = traerParametro(listaArg, 2);
         res = insertInto(nombreTabla, valoresTupla);
         if(  res == 0 )
             cout<< "\tQuery OK -> Nuevo resitro en la tabla \""<<nombreTabla<<"\""<<endl;
@@ -542,7 +542,7 @@ void readInput(ListaTabla LTabla, string comando){
 
     }
     if( sentencia == "deleteFrom" ){ //deleteFrom( nombreTabla, condicionEliminar )
-        string condicionEliminar = getParametro(listaArg, 2);
+        string condicionEliminar = traerParametro(listaArg, 2);
         res = deleteFrom(nombreTabla, condicionEliminar);
         if(  res == 0 )
             cout<< "\tQuery OK -> El registro fue eliminado "<<endl;
@@ -553,9 +553,9 @@ void readInput(ListaTabla LTabla, string comando){
 
     }
     if( sentencia == "update" ){ // update( nombreTabla, condicionModificar, columnaModificar, valorModificar)
-        string condModificar = getParametro(listaArg, 2);
-        string columna = getParametro(listaArg, 3);
-        string valoModificar = getParametro(listaArg, 4);
+        string condModificar = traerParametro(listaArg, 2);
+        string columna = traerParametro(listaArg, 3);
+        string valoModificar = traerParametro(listaArg, 4);
         res = update(nombreTabla, condModificar, columna, valoModificar);
         if(  res == 0 )
             cout<< "\tQuery OK -> El registro se ha actualizado correctamente "<<endl;
@@ -572,16 +572,16 @@ void readInput(ListaTabla LTabla, string comando){
         if( res == 1 )
             cout<< "\tQuery ERROR -> No se pudo mostrar la tabla\""<< nombreTabla <<"\""<<endl;
     }
-    if( sentencia == "help"  )//  printHelp()
-        printHelp();
+    if( sentencia == "help"  )//  mostrarAyuda()
+        mostrarAyuda();
     if(sentencia!="createTable" && sentencia!="dropTable" && sentencia!="addCol" && sentencia!="dropCol" && sentencia!="insertInto" && sentencia!="deleteFrom" && sentencia!="update" && sentencia!="printDataTable" && sentencia!="help" && sentencia!="exit" )
         cout << "\t¡EL comando '" << comando <<"' no es valido!" << '\n';
 }
 
 //Obtiene el parametro en la posicion n de la lista. Nota: debe recibir un n valido
-string getParametro(ListaArg L, int n){
+string traerParametro(ListaArg L, int n){
     if( L!=NULL && L->pos!=n )
-        return getParametro(L->sig, n);
+        return traerParametro(L->sig, n);
     if( L!=NULL && L->pos == n )
         return L->info;
 }
@@ -705,7 +705,7 @@ ListaArg crearListaArg(){
     return listaArg;
 }
 
-void addArgFinal(ListaArg L, string arg){
+void agregarArg(ListaArg L, string arg){
     ListaArg nuevo = new nodoListaArg;
     ListaArg aux = L;
     nuevo->info = arg;
@@ -743,18 +743,18 @@ void cargarListaArg(ListaArg L, string allArg, char separador){//Carga una lista
         if( parametros[i]!= separador){
             dato += parametros[i];
         }else{
-            addArgFinal(L, dato);
+            agregarArg(L, dato);
             dato="";
         }
     }
-    addArgFinal(L, dato);
+    agregarArg(L, dato);
 }
 
-ListaTabla buscaTabla(ListaTabla &LTabla, string nombreTabla){ //Busca una tabla por su nombre
+ListaTabla buscarTabla(ListaTabla &LTabla, string nombreTabla){ //Busca una tabla por su nombre
     if( LTabla == NULL)
         return NULL;
     if( LTabla->nombre != nombreTabla )
-        return buscaTabla( LTabla->sig, nombreTabla);
+        return buscarTabla( LTabla->sig, nombreTabla);
     else
         return LTabla;
 }
@@ -765,7 +765,7 @@ Si no lo a encuentra pueden pasar dos cosas, o bien no existe el registro mayor 
 el puntero a NULL.
 O tambien existe algun valor mayor a la pk y retorna false con el puntero en la posicion en la que debe insertar el nuevo registro.
 **/
-bool buscaTuplaPk(ListaTupla &sonda, string pk){
+bool buscarTuplaPorPK(ListaTupla &sonda, string pk){
     while( sonda->sig!=NULL ){
         if( sonda->sig == NULL)
             return false;
@@ -785,7 +785,7 @@ bool buscaTuplaPk(ListaTupla &sonda, string pk){
 }
 
 //Busca una columna por su nombre y retorna la posicion de la columna, o  retorna 1000 si no la encuentra
-int buscaColuma(ListaColum L, string nombreColum){
+int buscarColumna(ListaColum L, string nombreColum){
     while( L != NULL ){
         if(L->nombre == nombreColum)
             return L->nroColum;
@@ -795,25 +795,25 @@ int buscaColuma(ListaColum L, string nombreColum){
     return 1000;
 }
 
-bool addTuplaOrdenada(ListaTupla &auxTupla, string pk, ListaArg listaValores){//agrega una nueva tupla de forma ordenada
+bool agregarTuplaOrdenada(ListaTupla &auxTupla, string pk, ListaArg listaValores){//agrega una nueva tupla de forma ordenada
     ListaTupla sonda = auxTupla;
     ListaCelda auxCelda;
-//cout<< "salida de busca tupla-> "<<buscaTuplaPk(sonda, pk)<<endl;
+//cout<< "salida de busca tupla-> "<<buscarTuplaPorPK(sonda, pk)<<endl;
     if( auxTupla->sig == NULL ){ //Si la primer tupla es NULL inserto en el primer lugar
-        addTuplaFinal(auxTupla, listaValores);
+        agregarTuplaFinal(auxTupla, listaValores);
         /****Aqui falta el codigo para las celdas con los datos***/
         return true;
     }
-    if( buscaTuplaPk(sonda, pk)){//Si encontro un registro con la misma pk no se puede agregar el registro
+    if( buscarTuplaPorPK(sonda, pk)){//Si encontro un registro con la misma pk no se puede agregar el registro
         return false;
-    }if( buscaTuplaPk(sonda, pk) == false && sonda != NULL ){
+    }if( buscarTuplaPorPK(sonda, pk) == false && sonda != NULL ){
         auxTupla = sonda;
-        addTuplaSiguiente(auxTupla, listaValores);
+        agregarTuplaSiguiente(auxTupla, listaValores);
         return true;
     }
 }
 
-void addTuplaFinal(ListaTupla &auxTupla, ListaArg listaValores){
+void agregarTuplaFinal(ListaTupla &auxTupla, ListaArg listaValores){
     if( auxTupla->sig == NULL ){
         ListaTupla nueva = new nodoListaTupla;//Nueva tupla
         nueva->ant = auxTupla;
@@ -828,10 +828,10 @@ void addTuplaFinal(ListaTupla &auxTupla, ListaArg listaValores){
         cargarTupla(auxTupla, listaValores);
         ordenarIndices(auxTupla);
     }else
-        addTuplaFinal(auxTupla->sig, listaValores);
+        agregarTuplaFinal(auxTupla->sig, listaValores);
 }
 
-void addTuplaSiguiente(ListaTupla &auxTupla, ListaArg listaValores){
+void agregarTuplaSiguiente(ListaTupla &auxTupla, ListaArg listaValores){
         ListaTupla nuevaTupla = new nodoListaTupla; //Nueva tupla
         nuevaTupla->ant = auxTupla;
         nuevaTupla->sig = auxTupla->sig;
@@ -857,14 +857,14 @@ void cargarTupla(ListaTupla &auxTupla, ListaArg listaArg){
         ListaCelda nueva = new nodoListaCelda;
         nueva->sig = NULL;
         nueva->ant = auxCelda;
-        nueva->info = getParametro(listaArg, i);
+        nueva->info = traerParametro(listaArg, i);
         nueva->nroCelda = auxCelda->nroCelda +1;
         auxCelda->sig = nueva;
         auxCelda = nueva;
     }
 }
 
-char getOperador(string condicion){//Obtiene el operador para las comparaciones cursado en un string
+char traerOperador(string condicion){//Obtiene el operador para las comparaciones cursado en un string
     int largo = condicion.length();
     char arrCondicion[largo];
     strcpy(arrCondicion,condicion.c_str());
@@ -891,4 +891,8 @@ void modificarCelda(ListaCelda &auxCelda, int nroCelda, string nuevoValor){
         modificarCelda(auxCelda->sig, nroCelda, nuevoValor);
     else
         auxCelda->info = nuevoValor;
+}
+
+void clearArg(ListaArg L){
+
 }
