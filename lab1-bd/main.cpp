@@ -156,6 +156,7 @@ TipoRet dropTable(string nombreTabla){
     TipoRet res = OK;
     extern ListaTabla LTabla;               //Variable tipo listaTabla Global
     ListaTabla aux = LTabla, borrar;
+
     while( aux->sig!=NULL ){
         if( aux->sig->nombre == nombreTabla ){
             borrar = aux->sig;
@@ -177,38 +178,36 @@ TipoRet addCol(string nombreTabla, string nombreCol){
     ListaTabla auxTabla = LTabla;
     ListaColum auxColum = NULL;
     ListaColum nuevaColum = NULL;
-    while( auxTabla!=NULL ){
-        if( auxTabla->nombre == nombreTabla ){ //Si existe la tabla, se para apuntando sobre ella
-            if( auxTabla->tupla->sig == NULL ){ // Chequea que la tabla no tenga ningun registro cargado **/
-                auxColum = auxTabla->columna; //Puntero auxiliar para recorrer las columnas
-                while( auxColum->sig != NULL ){//Recorre la lista de columnas y cheque que no exista una columna con el mismo nombre
-                    auxColum = auxColum->sig;
-                    if( auxColum->nombre == nombreCol ){
-                        cout<<"\t¡Operacion no valida!. Ya existe una columna llamada \""<<nombreCol<<"\""<<endl;
-                        res = ERROR;
-                        return res;
-                    }
+    auxTabla = buscarTabla(LTabla, nombreTabla); //Si existe la tabla, se para apuntando sobre ella
+    if( auxTabla!=NULL ){
+        if( auxTabla->tupla->sig == NULL ){ // Chequea que la tabla no tenga ningun registro cargado **/
+            auxColum = auxTabla->columna; //Puntero auxiliar para recorrer las columnas
+            while( auxColum->sig != NULL ){//Recorre la lista de columnas y cheque que no exista una columna con el mismo nombre
+                auxColum = auxColum->sig;
+                if( auxColum->nombre == nombreCol ){
+                    cout<<"\t¡Operacion no valida!. Ya existe una columna llamada \""<<nombreCol<<"\""<<endl;
+                    res = ERROR;
+                    return res;
                 }
-                //Si no se encontro ninguna columna con el mismo nombre:
-                nuevaColum = new nodoListaColum;
-                auxColum->sig = nuevaColum;
-                nuevaColum->nombre = nombreCol;
-                nuevaColum->sig = NULL;
-                nuevaColum->ant = auxColum;
-                nuevaColum->nroColum = auxColum->nroColum+1;
-                auxTabla->nroColumna++;
-                if( auxColum->ant == NULL )  // Verifica si la columna a agregar debe ser PK o no
-                    nuevaColum->PK = true;
-                res = OK;
-                return res;
-            }else{
-                cout<<"\t¡Operacion no valida!. La tabla ya tiene registros cargados"<<endl;
-                res = ERROR;
-                return res;
             }
+            //Si no se encontro ninguna columna con el mismo nombre:
+            nuevaColum = new nodoListaColum;
+            auxColum->sig = nuevaColum;
+            nuevaColum->nombre = nombreCol;
+            nuevaColum->sig = NULL;
+            nuevaColum->ant = auxColum;
+            nuevaColum->nroColum = auxColum->nroColum+1;
+            auxTabla->nroColumna++;
+            if( auxColum->ant == NULL )  // Verifica si la columna a agregar debe ser PK o no
+                nuevaColum->PK = true;
+            res = OK;
+            return res;
         }else{
-            auxTabla = auxTabla->sig;
+            cout<<"\t¡Operacion no valida!. La tabla ya tiene registros cargados"<<endl;
+            res = ERROR;
+            return res;
         }
+
     }
     cout<<"\tLa tabla \""<<nombreTabla<<"\" no existe."<<endl;
     res = ERROR;
@@ -224,10 +223,10 @@ TipoRet dropCol(string nombreTabla, string nombreCol){
     ListaColum borraColum;
     ListaTupla auxTupla;
     ListaCelda auxCelda;
-    ListaCelda borraCelda;https://www.google.com/
-    /** Busca si existe la tabla **/
-    while( auxTabla!=NULL ){
-        if( auxTabla->nombre == nombreTabla ){ //Si existe la tabla, se para apuntando sobre ella
+    ListaCelda borraCelda;
+    /*** Busca si existe la tabla **/
+    auxTabla = buscarTabla(LTabla, nombreTabla);//Si existe la tabla, se para apuntando sobre ella
+    if( auxTabla!=NULL ){
             auxColum = auxTabla->columna;
             while( auxColum->sig != NULL ){  //Recorre la lista de columnas y chequea que no exista una columna con el mismo nombre
                 if( auxColum->sig->nombre == nombreCol ){
@@ -277,10 +276,6 @@ TipoRet dropCol(string nombreTabla, string nombreCol){
                 }
                 auxColum = auxColum->sig;
             }
-
-        }else{
-            auxTabla = auxTabla->sig;
-        }
     }
     cout<<"\tLa tabla \""<<nombreTabla<<"\" no existe."<<endl;
     res = ERROR;
