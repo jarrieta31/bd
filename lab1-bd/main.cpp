@@ -88,8 +88,13 @@ int lengthArg(ListaArg L);  //Obtiene el largo de una lista de parametros
 char traerOperador( string condicion); //Recibe una condicion en forma de string y recupera el operador utilizado retornandolo como char
 ListaTupla buscaTuplaValor(ListaTupla L, int nroColumna, char operador, string valor); //retorna un puntero a la tupla buscada
 void borrarTupla(ListaTupla &auxTupla); //Borra la tupla actual
-void borrarCeldasTupla(ListaCelda &auxCelda);
+
 void borrarCelda(ListaCelda &auxCelda, int nroCelda);
+void borrarColumnasTabla(ListaColum &auxColum); //Borra todas las columnas de una tabla
+void borrarCeldasTupla(ListaCelda &auxCelda); //borra todas las celdas
+void borrarTuplasTabla(ListaTupla &auxTupla); //Borra todas las tuplas de una tabla
+
+
 bool comienzaCon(string valor, string datoCelda); //Comprueba si el dato de una celda comienda con un determinado valor
 void modificarCelda(ListaCelda &auxCelda, int nroCelda, string nuevoValor);
 
@@ -155,18 +160,31 @@ TipoRet createTable(string nombreTabla){
 TipoRet dropTable(string nombreTabla){
     TipoRet res = OK;
     extern ListaTabla LTabla;               //Variable tipo listaTabla Global
-    ListaTabla aux = LTabla, borrar;
-
-    while( aux->sig!=NULL ){
-        if( aux->sig->nombre == nombreTabla ){
-            borrar = aux->sig;
-            if( aux->sig->sig != NULL ) //Verifica si hay un nodo despues del que voy a borrar
-                aux->sig->sig->ant = aux;
-            aux->sig = aux->sig->sig;
-            delete borrar;
+    ListaTabla auxTabla = LTabla, borrarTabla;
+    ListaColum auxColum, borrarColum;
+    ListaTupla auxTupla, borrarTupla;
+    ListaCelda auxCelda, borrarCelda;
+    while( auxTabla->sig!=NULL ){
+        if( auxTabla->sig->nombre == nombreTabla ){//Busca la tabla a borrar y para una posicion antes
+            auxColum = auxTabla->sig->columna;     //Apunta a las columnas a eliminar
+            borrarColumnasTabla(auxColum); //Borra la lista de columnas de la tabla
+            auxTupla = auxTabla->sig->tupla; //Apunta al comienzo de las tuplas a borrar
+            while( auxTupla != NULL ){//Recorro todas las tuplas y borro sus celdas
+                auxCelda = auxTupla->celda; //Apunta a la lista de celdas de la tupla actual
+                borrarCeldasTupla(auxCelda);//Elimina la lista de celdas de la tupla actual
+                auxTupla = auxTupla->sig;   //Avanza a la siguiente tupla
+            }
+            auxTupla = auxTabla->sig->tupla; //Apunta al comienzo de las tuplas a borrar
+            borrarTuplasTabla(auxTupla);  //Borra todas la tuplas de una tabla
+            //Por ultimo borra la tabla
+            borrarTabla = auxTabla->sig;
+            if( auxTabla->sig->sig != NULL ) //Verifica si hay un nodo despues del que voy a borrar
+                auxTabla->sig->sig->ant = auxTabla;
+            auxTabla->sig = auxTabla->sig->sig;
+            delete borrarTabla;
             return res;
         }
-        aux = aux->sig;
+        auxTabla = auxTabla->sig;
     }
     res = ERROR;
     return res;
@@ -892,6 +910,35 @@ void modificarCelda(ListaCelda &auxCelda, int nroCelda, string nuevoValor){
         auxCelda->info = nuevoValor;
 }
 
-void clearArg(ListaArg L){
 
+void borrarColumnasTabla(ListaColum &auxColum){ //Borra todas las columnas de una tabla
+    if( auxColum==NULL )
+        return;
+    if( auxColum->sig==NULL ){
+        ListaColum borrar = auxColum;
+        auxColum = NULL;
+        delete borrar;
+        return;
+    }else{
+        ListaColum borrar = auxColum->sig;
+        auxColum->sig = borrar->sig;
+        delete borrar;
+        borrarColumnasTabla(auxColum->sig);
+    }
+}
+
+void borrarTuplasTabla(ListaTupla &auxTupla){ //Borra todas las tuplas de una tabla
+    if( auxTupla==NULL)
+        return;
+    if( auxTupla->sig==NULL ){
+        ListaTupla borrar = auxTupla;
+        auxTupla = NULL;
+        delete borrar;
+        return;
+    }else{
+        ListaTupla borrar = auxTupla->sig;
+        auxTupla->sig = borrar->sig;
+        delete borrar;
+        borrarTuplasTabla(auxTupla->sig);
+    }
 }
