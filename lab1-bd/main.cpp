@@ -349,24 +349,28 @@ TipoRet deleteFrom(string nombreTabla, string condicion){
             auxTupla = auxTabla->tupla->sig; //Puntero auxiliar para recorrer las tuplas
             while( auxTupla!= NULL ){
                 auxCelda = auxTupla->celda;
-                if( !condicion.empty() ){
+                if( operador!='-' ){
                     if( compararCelda( auxCelda, nroColumna, operador, valorCondicion) ){
                         cout<<"El registro nro "<< auxTupla->indice <<" contiene: "<< auxCelda->sig->sig->info<<" "<<auxCelda->sig->sig->sig->info  <<endl;
                         borrarCeldasTupla(auxCelda);
                         borrarTupla(auxTupla);
                     }
                 }
-                if( condicion.empty() ){
+                if( operador=='-' ){
                     borrarCeldasTupla(auxCelda);
                     borrarTupla(auxTupla);
                 }
                 auxTupla = auxTupla->sig;
             }
-            ordenarIndices(auxTupla);
+            if( auxTupla != NULL ){
+                ordenarIndices(auxTupla);
+            }
+            borrarListaArg(listaCondicion);
             return res;
         }
         else{
             cout<< "No hay campo con ese nombre"<<endl;
+            borrarListaArg(listaCondicion);
             res = ERROR;
             return res;
         }
@@ -406,11 +410,13 @@ TipoRet update(string nombreTabla, string condicionModificar, string columnaModi
                 }
                 auxTupla = auxTupla->sig;
             }
+            borrarListaArg(listaCondicion);
             return res;
         }
         else{
             cout<< "No hay campo con ese nombre"<<endl;
             res = ERROR;
+            borrarListaArg(listaCondicion);
             return res;
         }
     }
@@ -889,7 +895,7 @@ char traerOperador(string condicion){//Obtiene el operador para las comparacione
     char c;
     for(int i=0; i<largo; i++){
         c = arrCondicion[i];
-        if( c=='*' || c=='<' || c=='>' || c=='!' || c=='='){
+        if( c=='*' || c=='<' || c=='>' || c=='!' || c=='=' || c== '-'){
             return c;
         }
     }
