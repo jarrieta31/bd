@@ -71,7 +71,7 @@ void mostrarAyuda(); // Imprime la Ayuda con los comandos validos
 string traerParametro(ListaArg L, int n);  //Trae del a posicion n un valor tipo string de la lista de parametros
 ListaArg crearListaArg();               //Crea una lista para guardar parametros
 void imprimirArg(ListaArg L);           //Imprime los argumentos de la lista
-//void clearArg(ListaArg L);
+void borrarListaArg(ListaArg &L);
 void agregarArg(ListaArg L, string arg); //Agrega un nuevo parametro al final de la lista de parametros
 void cargarListaArg(ListaArg L, string allArg, char separador);
 ListaTabla buscarTabla(ListaTabla &LTabla, string nombreTabla); //Si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
@@ -319,10 +319,12 @@ TipoRet insertInto(string nombreTabla, string valoresTupla){
             if(agregarTuplaOrdenada(auxTupla, pk, listaValores)){  //Devuelve true si pudo insertar la tupla de forma ordenada
              //   cargarTupla(auxTupla, listaValores);
                 cout<<"\tNuevo registro agregado con exito"<<endl;
+                borrarListaArg(listaValores);
                 return res;
             }else{
                 cout<<"\tNo se pudo insertar el registro"<<endl;
                 res = ERROR;
+                borrarListaArg(listaValores);
                 return res;
             }
         }
@@ -815,7 +817,6 @@ int buscarColumna(ListaColum L, string nombreColum){
 bool agregarTuplaOrdenada(ListaTupla &auxTupla, string pk, ListaArg listaValores){//agrega una nueva tupla de forma ordenada
     ListaTupla sonda = auxTupla;
     ListaCelda auxCelda;
-//cout<< "salida de busca tupla-> "<<buscarTuplaPorPK(sonda, pk)<<endl;
     if( auxTupla->sig == NULL ){ //Si la primer tupla es NULL inserto en el primer lugar
         agregarTuplaFinal(auxTupla, listaValores);
         /****Aqui falta el codigo para las celdas con los datos***/
@@ -940,5 +941,21 @@ void borrarTuplasTabla(ListaTupla &auxTupla){ //Borra todas las tuplas de una ta
         auxTupla->sig = borrar->sig;
         delete borrar;
         borrarTuplasTabla(auxTupla->sig);
+    }
+}
+
+void borrarListaArg(ListaArg &L){ //Borra todas los argumentos
+    if( L==NULL )
+        return;
+    if( L->sig==NULL ){
+        ListaArg borrar = L;
+        L = NULL;
+        delete borrar;
+        return;
+    }else{
+        ListaArg borrar = L->sig;
+        L->sig = borrar->sig;
+        delete borrar;
+        borrarListaArg(L->sig);
     }
 }
