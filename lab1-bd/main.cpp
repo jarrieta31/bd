@@ -224,9 +224,9 @@ TipoRet dropCol(string nombreTabla, string nombreCol){
     ListaTupla auxTupla;
     ListaCelda auxCelda;
     ListaCelda borraCelda;
-    /*** Busca si existe la tabla **/
-    auxTabla = buscarTabla(LTabla, nombreTabla);//Si existe la tabla, se para apuntando sobre ella
-    if( auxTabla!=NULL ){
+    /** Busca si existe la tabla **/
+    while( auxTabla!=NULL ){
+        if( auxTabla->nombre == nombreTabla ){ //Si existe la tabla, se para apuntando sobre ella
             auxColum = auxTabla->columna;
             while( auxColum->sig != NULL ){  //Recorre la lista de columnas y chequea que no exista una columna con el mismo nombre
                 if( auxColum->sig->nombre == nombreCol ){
@@ -276,6 +276,10 @@ TipoRet dropCol(string nombreTabla, string nombreCol){
                 }
                 auxColum = auxColum->sig;
             }
+
+        }else{
+            auxTabla = auxTabla->sig;
+        }
     }
     cout<<"\tLa tabla \""<<nombreTabla<<"\" no existe."<<endl;
     res = ERROR;
