@@ -43,7 +43,7 @@ typedef nodoListaTupla * ListaTupla;
 
 struct nodoListaTabla{
     string nombre;
-    int nroColumna;
+    int cantColumnas;
     ListaColum columna;
     ListaTupla tupla;
     nodoListaTabla * ant;
@@ -82,14 +82,16 @@ bool agregarTuplaOrdenada(ListaTupla &auxTupla, string pk, ListaArg listaValores
 void agregarTuplaFinal(ListaTupla &auxTupla, ListaArg listaValores);    //agrega una nueva tupla al final de la lista
 void agregarTuplaSiguiente(ListaTupla &auxTupla, ListaArg listaValores);//agrega la siguiente tupla a la posicion actual
 //void agregarCeldaFinal(ListaCelda &auxCelda, string dato);//agrega nueva celda al final de la lista
-void ordenarIndices(ListaTupla &auxTupla);     //Recorre todas las tuplas ordenando los indices cuando una es eliminada
+void ordenarIndiceTupla(ListaTupla &auxTupla);     //Recorre todas las tuplas ordenando los indices cuando una es eliminada
+void ordenarNroColum(ListaColum &auxColum);     //Recorre todas las columnas ordenando los nroColum cuando una columna es eliminada
+void ordenarNroCelda(ListaCelda &auxCelda);    //Recorre todas las celadas de una tupla y ordenando los indices cuando una es eliminada
 void cargarTupla(ListaTupla &auxTupla, ListaArg listaArg); //Llena un registro con la lista de argumentos recibidos en forma de lista
 int lengthArg(ListaArg L);  //Obtiene el largo de una lista de parametros
 char traerOperador( string condicion); //Recibe una condicion en forma de string y recupera el operador utilizado retornandolo como char
-ListaTupla buscaTuplaValor(ListaTupla L, int nroColumna, char operador, string valor); //retorna un puntero a la tupla buscada
+ListaTupla buscaTuplaValor(ListaTupla L, int cantColumnas, char operador, string valor); //retorna un puntero a la tupla buscada
 void borrarTupla(ListaTupla &auxTupla); //Borra la tupla actual
-
-void borrarCelda(ListaCelda &auxCelda, int nroCelda);
+void borrarColumna(ListaColum &auxColum, int nroColum); //Recibe el numero de la columna y la borra de lista de columnas(Nombres de campos)
+void borrarCelda(ListaCelda LCelda, int nroCelda);
 void borrarColumnasTabla(ListaColum &auxColum); //Borra todas las columnas de una tabla
 void borrarCeldasTupla(ListaCelda &auxCelda); //borra todas las celdas
 void borrarTuplasTabla(ListaTupla &auxTupla); //Borra todas las tuplas de una tabla
@@ -102,7 +104,7 @@ int test = 0;
 
 int main(){
     extern ListaTabla LTabla;
-    LTabla->nroColumna = 0;
+    LTabla->cantColumnas = 0;
     LTabla->ant = NULL;
     LTabla->sig = NULL;
 
@@ -215,7 +217,7 @@ TipoRet addCol(string nombreTabla, string nombreCol){
             nuevaColum->sig = NULL;
             nuevaColum->ant = auxColum;
             nuevaColum->nroColum = auxColum->nroColum+1;
-            auxTabla->nroColumna++;
+            auxTabla->cantColumnas++;
             if( auxColum->ant == NULL )  // Verifica si la columna a agregar debe ser PK o no
                 nuevaColum->PK = true;
             res = OK;
@@ -243,65 +245,47 @@ TipoRet dropCol(string nombreTabla, string nombreCol){
     ListaCelda auxCelda;
     ListaCelda borraCelda;
     /** Busca si existe la tabla **/
-    while( auxTabla!=NULL ){
-        if( auxTabla->nombre == nombreTabla ){ //Si existe la tabla, se para apuntando sobre ella
+    auxTabla = buscarTabla(LTabla, nombreTabla); //si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
+    if( auxTabla!=NULL ){
             auxColum = auxTabla->columna;
+
             while( auxColum->sig != NULL ){  //Recorre la lista de columnas y chequea que no exista una columna con el mismo nombre
                 if( auxColum->sig->nombre == nombreCol ){
-                    nroColBuscada = auxColum->nroColum; //guarda el nuero de columna buscada
-                    if( auxColum->sig->PK==true && auxTabla->nroColumna>1 ){//si hay mas de una columna no se pude borrar la pk
+                    nroColBuscada = buscarColumna(auxColum, nombreCol); //Obtiene el numero de la columna, si no lo encuentra retorna 1000
+                   // nroColBuscada = auxColum->sig->nroColum; //guarda el numero de la columna buscada
+                    if( auxColum->sig->PK==true && auxTabla->cantColumnas>1 ){//si hay mas de una columna no se pude borrar la pk
                         cout<<"\tLa columna \""<<nombreCol<<"\" es Clave Primaria y hay otras columnas que se identifican por ella."<<endl;
                         res = ERROR;
                         return res;
                     }
                     else{
-                        borraColum = auxColum->sig;
-                        auxColum->sig = borraColum->sig;
-                        if( borraColum->sig != NULL ){//si el que se eliminio no es el ultimo elemento
-                            borraColum->sig->ant = auxColum;
-                            auxColum = auxTabla->columna;//regreso el puntero
-                            while( auxColum->sig != NULL ){ //actualiza todo los nro de las columnas
-                                auxColum->sig->nroColum = auxColum->nroColum+1;
-                                auxColum = auxColum->sig;
-                            }
-                        }
-                        delete borraColum;
-                        auxTabla->nroColumna--;
+                    /******* LO MODIFICADO ********************/
+                        borrarColumna( auxColum, nroColBuscada); //Borra la columna
+                        ordenarNroColum(auxTabla->columna);    //Ordena los numeros de las columnas
+                    /*******************************************/
+                        auxTabla->cantColumnas--;         //Decrementa en uno la cantidad de columnas que tiene la tabla
                         auxTupla = auxTabla->tupla->sig;//arranca en la tupla 1
                         while( auxTupla != NULL ){ //Busca en todas las tuplas
                             auxCelda = auxTupla->celda;
-                            while( auxCelda->sig!=NULL ){ //Elimina las celdas correspondientes a esa columna en cada tupla
-                                //si el nro de celda es igual al nro de columna
-                                if( auxCelda->sig->nroCelda == nroColBuscada ){
-                                    borraCelda = auxCelda->sig;
-                                    auxCelda = borraCelda->sig;
-                                    if( borraCelda->sig != NULL ){
-                                        borraCelda->sig->ant = auxCelda;
-                                        auxCelda = auxTupla->celda;  //vuelvo el puntero auxiliar a la posicion 0
-                                        while( auxCelda->sig!=NULL){ //hay que actualizar todos los nro de celdas
-                                            auxCelda->sig->nroCelda = auxCelda->nroCelda+1;
-                                            auxCelda = auxCelda->sig;
-                                        }
-                                    }
-                                    delete borraCelda;
-                                }
-                            }
+                            borrarCelda(auxCelda, nroColBuscada);//borra la celda
+                            ordenarNroCelda( auxTupla->celda ); //ordena el indice de la celda
+                            auxTupla = auxTupla->sig;       //Avanza a la  siguiente tupla
                         }
-                        cout<<"\tLa columna \""<<nombreCol<<"\" ha sido eliminada con existo"<<endl;
+                        cout<<"\tColumna \""<<nombreCol<<"\" eliminada"<<endl;
                         res = OK;
                         return res;
                     }
                 }
                 auxColum = auxColum->sig;
             }
-
-        }else{
-            auxTabla = auxTabla->sig;
-        }
+            cout<<"\tLa Columna \""<<nombreCol<<"\" no existe."<<endl;
+            res = ERROR;
+            return res;
+    }else{  //Si la tabla no existe
+        cout<<"\tLa tabla \""<<nombreTabla<<"\" no existe."<<endl;
+        res = ERROR;
+        return res;
     }
-    cout<<"\tLa tabla \""<<nombreTabla<<"\" no existe."<<endl;
-    res = ERROR;
-    return res;
 }
 
 TipoRet insertInto(string nombreTabla, string valoresTupla){
@@ -313,7 +297,7 @@ TipoRet insertInto(string nombreTabla, string valoresTupla){
     cargarListaArg(listaValores, valoresTupla, ':');    //carga los valores en una lista
     auxTabla = buscarTabla(LTabla, nombreTabla); //si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
     if( auxTabla != NULL){
-        if( auxTabla->nroColumna == lengthArg(listaValores) ){//Chequea si la cantidad de valores pasados es igual a los campos que tiene a tabla
+        if( auxTabla->cantColumnas == lengthArg(listaValores) ){//Chequea si la cantidad de valores pasados es igual a los campos que tiene a tabla
             auxTupla = auxTabla->tupla;
             string pk = traerParametro(listaValores, 1); //obtiene la pk cursada
             if(agregarTuplaOrdenada(auxTupla, pk, listaValores)){  //Devuelve true si pudo insertar la tupla de forma ordenada
@@ -363,7 +347,7 @@ TipoRet deleteFrom(string nombreTabla, string condicion){
                 auxTupla = auxTupla->sig;
             }
             if( auxTupla != NULL ){
-                ordenarIndices(auxTupla);
+                ordenarIndiceTupla(auxTupla);
             }
             borrarListaArg(listaCondicion);
             return res;
@@ -473,21 +457,21 @@ void mostrarAyuda(){
     cout << "Nota: todos los comandos son 'case sensitive' "<<endl;
     cout << "  help  _______________________________________________________________________* IMPRIME LA AYUDA EN PANTALLA *" <<endl<<endl;
     cout << "  createTable(nombreTabla) ____________________________________________________* CREA UNA NUEVA TABLA *"<<endl<<endl;
-    cout << "\t\tEjemplo:\t\tcreateTable(Empleados)"<<endl<<endl;
+    cout << "\tEjemplo:\t\tcreateTable(Empleados)"<<endl<<endl;
     cout << "  dropTable(nombreTabla) ______________________________________________________* ELIMINA UNA TABLA EXISTENTE *" <<endl<<endl;
-    cout << "\t\tEjemplo:\t\tdropTable(Productos)"<<endl<<endl;
+    cout << "\tEjemplo:\t\tdropTable(Productos)"<<endl<<endl;
     cout << "  addCol(nombreTabla, nombreCol) ______________________________________________* AGREGA UNA NUEVA COLUMNA A LA TABLA EXISTENTE *" <<endl<<endl;
-    cout << "\t\tEjemplo:\t\taddCol(Empleados, Apellido)"<<endl<<endl;
+    cout << "\tEjemplo:\t\taddCol(Empleados, Apellido)"<<endl<<endl;
     cout << "  dropCol(nombreTabla, nombreCol) _____________________________________________* ELIMINA UNA COLUMNA DE UNA TABLA *" <<endl<<endl;
-    cout << "\t\tEjemplo:\t\tdropCol(Proyectos, idProyecto)"<<endl<<endl;
+    cout << "\tEjemplo:\t\tdropCol(Proyectos, idProyecto)"<<endl<<endl;
     cout << "  insertInto(nombreTabla, valoresTupla) _______________________________________* INSERTA UN NUEVO REGISTRO EN LA TABLA *" <<endl<<endl;
-    cout << "\t\tEjemplo:\t\tinsertInto(Personas, 3333111: Telma: Perez)"<<endl<<endl;
+    cout << "\tEjemplo:\t\tinsertInto(Personas, 3333111: Telma: Perez)"<<endl<<endl;
     cout << "  deleteFrom(nombreTabla, condicionEliminar) __________________________________* ELIMINA UN REGISTRO DE UNA TABLA *" <<endl<<endl;
-    cout << "\t\tEjemplo:\t\tdeleteFrom(Personas, Perez)"<<endl<<endl;
+    cout << "\tEjemplo:\t\tdeleteFrom(Personas, Perez)"<<endl<<endl;
     cout << "  update(nombreTabla, condicionModificar, columnaModificar, valorModificar) ___* caracterIZA UN CAMPO DE UNA TABLA *" <<endl<<endl;
-    cout << "\t\tEjemplo:\t\tupdate(Personas, Nombre=Pepe: CI: 1555000)"<<endl<<endl;
+    cout << "\tEjemplo:\t\tupdate(Personas, Nombre=Pepe: CI: 1555000)"<<endl<<endl;
     cout << "  printDataTable(Clientes) _________________________________________________* IMPRIME TODOS LOS REGISTROS DE UNA TABLA *" <<endl<<endl;
-    cout << "\t\tEjemplo:\t\tprintDataTable(Clientes)"<<endl<<endl;
+    cout << "\tEjemplo:\t\tprintDataTable(Clientes)"<<endl<<endl;
 }
 
 /****************     LEE EL INGRESO DE LOS COMANDOS     ************************/
@@ -625,14 +609,26 @@ void borrarTupla(ListaTupla &auxTupla){
     }
 }
 
-void borrarCelda(ListaCelda &auxCelda, int nroCelda){
-    if( auxCelda->sig != NULL && auxCelda->sig->nroCelda != nroCelda)
-        borrarCelda(auxCelda->sig, nroCelda);
-    if( auxCelda->sig != NULL && auxCelda->sig->nroCelda == nroCelda){
-        ListaCelda borra = auxCelda->sig;
-        auxCelda->sig = borra->sig;
+void borrarColumna(ListaColum &auxColum, int nroColum){
+    if( auxColum->sig != NULL && auxColum->sig->nroColum != nroColum)
+        borrarColumna(auxColum->sig, nroColum);
+    if( auxColum->sig != NULL && auxColum->sig->nroColum == nroColum){
+        ListaColum borra = auxColum->sig;
+        auxColum->sig = borra->sig;
         if( borra->sig != NULL )
-            borra->sig->ant = auxCelda;
+            borra->sig->ant = auxColum;
+        delete borra;
+    }
+}
+
+void borrarCelda(ListaCelda LCelda, int nroCelda){
+    if( LCelda->sig != NULL && LCelda->sig->nroCelda != nroCelda)
+        borrarCelda(LCelda->sig, nroCelda);
+    if( LCelda->sig != NULL && LCelda->sig->nroCelda == nroCelda){
+        ListaCelda borra = LCelda->sig;
+        LCelda->sig = borra->sig;
+        if( borra->sig != NULL )
+            borra->sig->ant = LCelda;
         delete borra;
     }
 }
@@ -850,7 +846,7 @@ void agregarTuplaFinal(ListaTupla &auxTupla, ListaArg listaValores){
         nueva->celda->sig = NULL;
         nueva->celda->nroCelda = 0;
         cargarTupla(auxTupla, listaValores);
-        ordenarIndices(auxTupla);
+        ordenarIndiceTupla(auxTupla);
     }else
         agregarTuplaFinal(auxTupla->sig, listaValores);
 }
@@ -868,7 +864,7 @@ void agregarTuplaSiguiente(ListaTupla &auxTupla, ListaArg listaValores){
         auxTupla->celda->sig = NULL;
         auxTupla->celda->nroCelda = 0;
         cargarTupla(auxTupla, listaValores);
-        ordenarIndices(auxTupla);
+        ordenarIndiceTupla(auxTupla);
 }
 
 void cargarTupla(ListaTupla &auxTupla, ListaArg listaArg){
@@ -901,7 +897,7 @@ char traerOperador(string condicion){//Obtiene el operador para las comparacione
     }
 }
 
-void ordenarIndices(ListaTupla &auxTupla){//Ordena los indices de las tuplas
+void ordenarIndiceTupla(ListaTupla &auxTupla){//Ordena los indices de las tuplas
     while( auxTupla != NULL && auxTupla->indice!=0 ){
         auxTupla->indice = auxTupla->ant->indice + 1;
         auxTupla = auxTupla->sig;
@@ -965,3 +961,28 @@ void borrarListaArg(ListaArg &L){ //Borra todas los argumentos
         borrarListaArg(L->sig);
     }
 }
+
+void ordenarNroColum(ListaColum &auxColum){
+	if( auxColum == NULL )
+		return;
+	if( auxColum->ant == NULL ){
+		auxColum->nroColum = 0;
+		ordenarNroColum( auxColum->sig );
+	}else{
+		auxColum->nroColum = auxColum->ant->nroColum +1 ;
+		ordenarNroColum( auxColum->sig );
+	}
+}
+
+void ordenarNroCelda(ListaCelda &auxCelda){
+	if( auxCelda == NULL )
+		return;
+	if( auxCelda->ant == NULL ){
+		auxCelda->nroCelda = 0;
+		ordenarNroCelda( auxCelda->sig );
+	}else{
+		auxCelda->nroCelda = auxCelda->ant->nroCelda +1 ;
+		ordenarNroCelda( auxCelda->sig );
+	}
+}
+
