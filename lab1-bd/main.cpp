@@ -974,12 +974,12 @@ void borrarColumnasTabla(ListaColum &auxColum){ //Borra todas las columnas de un
 void borrarTuplasTabla(ListaTupla &auxTupla){ //Borra todas las tuplas de una tabla
     if( auxTupla==NULL)
         return;
-    if( auxTupla->sig==NULL ){
+    if( auxTupla->sig == NULL ){
         ListaTupla borrar = auxTupla;
         auxTupla = NULL;
         delete borrar;
         return;
-    }else{
+    }if( auxTupla->sig != NULL ){
         ListaTupla borrar = auxTupla->sig;
         auxTupla->sig = borrar->sig;
         delete borrar;
