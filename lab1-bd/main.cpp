@@ -248,7 +248,13 @@ TipoRet dropCol(string nombreTabla, string nombreCol){
                 if( auxColum->sig->nombre == nombreCol ){
                     nroColBuscada = buscarColumna(auxColum, nombreCol); //Obtiene el numero de la columna, si no lo encuentra retorna 1000
                     if( auxColum->sig->PK==true && auxTabla->cantColumnas == 1 ){
-                        borrarTuplasTabla(auxTabla->tupla);
+                        auxTupla = auxTabla->tupla;
+                        while( auxTupla->sig != NULL ){
+                            ListaTupla borrar = auxTupla->sig;
+                            auxTupla->sig = borrar->sig;
+                            borrar->ant = NULL;
+                            delete borrar;
+                        }
                         ordenarIndiceTupla(auxTabla->tupla);
                     }
                     if( auxColum->sig->PK==true && auxTabla->cantColumnas>1 ){//si hay mas de una columna no se pude borrar la pk
