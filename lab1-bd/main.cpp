@@ -244,21 +244,21 @@ TipoRet dropCol(string nombreTabla, string nombreCol){
     auxTabla = buscarTabla(LTabla, nombreTabla); //si la tabla existe devuelve el puntero a ella, si no el puntero es NULL
     if( auxTabla!=NULL ){
             auxColum = auxTabla->columna;
-
             while( auxColum->sig != NULL ){  //Recorre la lista de columnas y chequea que no exista una columna con el mismo nombre
                 if( auxColum->sig->nombre == nombreCol ){
                     nroColBuscada = buscarColumna(auxColum, nombreCol); //Obtiene el numero de la columna, si no lo encuentra retorna 1000
-                   // nroColBuscada = auxColum->sig->nroColum; //guarda el numero de la columna buscada
+                    if( auxColum->sig->PK==true && auxTabla->cantColumnas == 1 ){
+                        borrarTuplasTabla(auxTabla->tupla);
+                        ordenarIndiceTupla(auxTabla->tupla);
+                    }
                     if( auxColum->sig->PK==true && auxTabla->cantColumnas>1 ){//si hay mas de una columna no se pude borrar la pk
                         cout<<"  La columna \""<<nombreCol<<"\" es Clave Primaria y hay otras columnas que se identifican por ella."<<endl;
                         res = ERROR;
                         return res;
                     }
                     else{
-                    /******* LO MODIFICADO ********************/
                         borrarColumna( auxColum, nroColBuscada); //Borra la columna
                         ordenarNroColum(auxTabla->columna);    //Ordena los numeros de las columnas
-                    /*******************************************/
                         auxTabla->cantColumnas--;         //Decrementa en uno la cantidad de columnas que tiene la tabla
                         auxTupla = auxTabla->tupla->sig;//arranca en la tupla 1
                         while( auxTupla != NULL ){ //Busca en todas las tuplas
@@ -297,7 +297,6 @@ TipoRet insertInto(string nombreTabla, string valoresTupla){
             auxTupla = auxTabla->tupla;
             string pk = traerParametro(listaValores, 1); //obtiene la pk cursada
             if(agregarTuplaOrdenada(auxTupla, pk, listaValores)){  //Devuelve true si pudo insertar la tupla de forma ordenada
-             //   cargarTupla(auxTupla, listaValores);
                 cout<<"  Nuevo registro agregado con exito"<<endl;
                 borrarListaArg(listaValores);
                 return res;
@@ -437,8 +436,12 @@ TipoRet printDataTable(string nombreTabla){
                         cout<<"  "<< auxColum->nombre;
                     if( auxColum->nroColum > 1 && auxColum->sig != NULL )
                         cout<<":"<< auxColum->nombre;
-                    if( auxColum->sig == NULL && auxColum->nroColum > 1)
+                    if( auxColum->sig == NULL && auxColum->nroColum > 1){
                         cout<<":"<< auxColum->nombre <<endl;
+                        continue;
+                    }
+                    if( auxColum->sig == NULL )
+                        cout<<endl;
                 }
                 /** Recorre la lista tuplas (resgistros)*/
                 ListaTupla auxTupla = auxTabla->tupla;   // puntero que apunta a la celda dummy de la lista tuplas
@@ -454,8 +457,13 @@ TipoRet printDataTable(string nombreTabla){
                             cout<<"  "<< auxCelda->info;
                         if( auxCelda->nroCelda > 1 && auxCelda->sig != NULL )
                             cout<<":"<< auxCelda->info;
-                        if( auxCelda->sig == NULL && auxCelda->nroCelda > 1)
+                        if( auxCelda->sig == NULL && auxCelda->nroCelda > 1){
                             cout<<":"<< auxCelda->info <<endl;
+                            continue;
+                        }
+                        if( auxCelda->sig == NULL )
+                            cout<<endl;
+
                     }
                 }
                 return res;
