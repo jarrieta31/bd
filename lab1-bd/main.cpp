@@ -96,14 +96,11 @@ void borrarTuplasTabla(ListaTupla &auxTupla); //Borra todas las tuplas de una ta
 bool comienzaCon(string valor, string datoCelda); //Comprueba si el dato de una celda comienda con un determinado valor
 void modificarCelda(ListaCelda &auxCelda, int nroCelda, string nuevoValor);
 
-int test = 0;
-
 int main(){
     extern ListaTabla LTabla;
     LTabla->cantColumnas = 0;
     LTabla->ant = NULL;
     LTabla->sig = NULL;
-
     string comando;
 
     while(comando!="exit"){ //mantiene la terminal esperando ordenes
@@ -483,25 +480,38 @@ TipoRet printDataTable(string nombreTabla){
 }
 
 void mostrarAyuda(){
-    cout <<endl<< "AYUDA DE COMANDOS: "<<endl;
+    cout <<endl<< "\tAYUDA DE COMANDOS: "<<endl;
     cout << "Nota: todos los comandos son 'case sensitive' "<<endl;
-    cout << "  help  _______________________________________________________________________* IMPRIME LA AYUDA EN PANTALLA *" <<endl<<endl;
-    cout << "  createTable(nombreTabla) ____________________________________________________* CREA UNA NUEVA TABLA *"<<endl<<endl;
-    cout << "  Ejemplo:    createTable(Empleados)"<<endl<<endl;
-    cout << "  dropTable(nombreTabla) ______________________________________________________* ELIMINA UNA TABLA EXISTENTE *" <<endl<<endl;
-    cout << "  Ejemplo:    dropTable(Productos)"<<endl<<endl;
-    cout << "  addCol(nombreTabla, nombreCol) ______________________________________________* AGREGA UNA NUEVA COLUMNA A LA TABLA EXISTENTE *" <<endl<<endl;
-    cout << "  Ejemplo:    addCol(Empleados, Apellido)"<<endl<<endl;
-    cout << "  dropCol(nombreTabla, nombreCol) _____________________________________________* ELIMINA UNA COLUMNA DE UNA TABLA *" <<endl<<endl;
-    cout << "  Ejemplo:    dropCol(Proyectos, idProyecto)"<<endl<<endl;
-    cout << "  insertInto(nombreTabla, valoresTupla) _______________________________________* INSERTA UN NUEVO REGISTRO EN LA TABLA *" <<endl<<endl;
-    cout << "  Ejemplo:    insertInto(Personas, 3333111: Telma: Perez)"<<endl<<endl;
-    cout << "  deleteFrom(nombreTabla, condicionEliminar) __________________________________* ELIMINA UN REGISTRO DE UNA TABLA *" <<endl<<endl;
-    cout << "  Ejemplo:    deleteFrom(Personas, Perez)"<<endl<<endl;
-    cout << "  update(nombreTabla, condicionModificar, columnaModificar, valorModificar) ___* caracterIZA UN CAMPO DE UNA TABLA *" <<endl<<endl;
-    cout << "  Ejemplo:    update(Personas, Nombre=Pepe: CI: 1555000)"<<endl<<endl;
-    cout << "  printDataTable(Clientes) _________________________________________________* IMPRIME TODOS LOS REGISTROS DE UNA TABLA *" <<endl<<endl;
-    cout << "  Ejemplo:    printDataTable(Clientes)"<<endl<<endl;
+    cout << "* help -> Imprimir ayuda" <<endl<<endl;
+    cout << "* Operadores validos para condicines en consultas:"<<endl;
+    cout << " (=) igual a ..."<<endl;
+    cout << " (!) diferente a ..."<<endl;
+    cout << " (*) comienza con ..."<<endl;
+    cout << " (-) todo ..."<<endl<<endl;
+    cout << "* createTable(nombreTabla) -> Crear tabla"<<endl;
+    cout << " Ejem: crear la tabla Empleados"<<endl;
+    cout << " Orden:  createTable(Empleados)"<<endl<<endl;
+    cout << "* dropTable(nombreTabla) -> Eliminar tabla"<<endl;
+    cout << " Ejem: eliminar la tabla Productos"<<endl;
+    cout << " Orden: dropTable(Productos)"<<endl<<endl;
+    cout << "* addCol(nombreTabla, nombreCol) -> Agregar columna"<<endl;
+    cout << " Ejem: agregar columna Apellido en la tabla Empleados"<<endl;
+    cout << " Orden: addCol(Empleados, Apellido)"<<endl<<endl;
+    cout << "* dropCol(nombreTabla, nombreCol) -> Eliminar columna"<<endl;
+    cout << " Ejem: elimina la columna idProyecto de la tabla Proyectos"<<endl;
+    cout << " Orden: dropCol(Proyectos, idProyecto)"<<endl<<endl;
+    cout << "* insertInto(nombreTabla, valoresTupla) -> Insertar registro"<<endl;
+    cout << " Ejem: agregar a Telma Perez en la tabla Personas "<<endl;
+    cout << " Orden: insertInto(Personas, 3333111: Telma: Perez)"<<endl<<endl;
+    cout << "* deleteFrom(nombreTabla, condicion) -> Eliminar registro"<<endl;
+    cout << " Ejem: elimina todos los registros de apellido Perez, de Personas"<<endl;
+    cout << " Orden: deleteFrom(Personas, apellido=Perez)"<<endl<<endl;
+    cout << "* update(nombreTabla, condicion, columna, valor) -> Atualizar tabla" <<endl;
+    cout << " Ejem: modifica el apellido a Ramos a todos los de nombre Pepe"<<endl;
+    cout << " Orden: update(Personas,Nombre=Pepe,apellido,Ramos)"<<endl<<endl;
+    cout << "* printDataTable(Clientes) -> Muestrar contenido de la tabla"<<endl;
+    cout << " Ejem: muestra el contenido de la tabla Clientes"<<endl;
+    cout << " Orden: printDataTable(Clientes)"<<endl<<endl;
 }
 
 /****************   LEE EL INGRESO DE LOS COMANDOS   ***********************/
@@ -524,18 +534,6 @@ void leerComando(ListaTabla LTabla, string comando){
     string sentencia = comando.substr(0,posApertura); //setencia ingresada con espacios
     size_t posCierre = comando.find(")");        // posicion de parentesis de cierre
     string allArg = comando.substr(posApertura+1 ,(posCierre - posApertura -1)); // obtiene el contenido de los argumentos
-
-    if( test == 0 ){
-    	createTable("empleados");
-    	addCol("empleados","id");
-    	addCol("empleados","nombre");
-    	addCol("empleados","apellido");
-    	insertInto("empleados","11:Juan:Alvarez");
-    	insertInto("empleados","2:Marina:Arismendi");
-    	insertInto("empleados","9:Manuel:Urrutia");
-    	insertInto("empleados","5:Emiliano:Carvajal");
-    	test = 1;
-    }
 
     //Se cargan los argumentos recibidos en una lista
     ListaArg listaArg = crearListaArg();
