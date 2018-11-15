@@ -709,14 +709,14 @@ bool compararCelda(ListaCelda L, int nroCelda, char operador, string valor){
             else
                 return false;
         }
-        if( operador == '<' ){
+        if( operador == '>' ){
             if( valor.compare(L->info) < 0 )
                 return true;
             else
                 return false;
         }
 
-        if( operador == '>' ){
+        if( operador == '<' ){
             if( valor.compare(L->info) > 0 )
                 return true;
             else
