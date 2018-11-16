@@ -1,3 +1,4 @@
+/*** LABORATIOR 2 EDA, grupo Julio Arrieta, Mariano Castro, Guillermo Moreira  ***/
 #include <iostream>
 #include <stdio.h>
 #include <cstring>
