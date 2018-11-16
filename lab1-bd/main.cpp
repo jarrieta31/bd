@@ -95,6 +95,9 @@ void borrarCeldasTupla(ListaCelda &auxCelda); //borra todas las celdas
 void borrarTuplasTabla(ListaTupla &auxTupla); //Borra todas las tuplas de una tabla
 bool comienzaCon(string valor, string datoCelda); //Comprueba si el dato de una celda comienda con un determinado valor
 void modificarCelda(ListaCelda &auxCelda, int nroCelda, string nuevoValor);
+void agregarColumna(ListaColum L, string nombre);
+int cantColumnas(ListaColum L);
+void imprimirReg(ListaCelda LC);
 
 int main(){
     extern ListaTabla LTabla;
@@ -210,7 +213,7 @@ TipoRet addCol(string nombreTabla, string nombreCol){
             nuevaColum->sig = NULL;
             nuevaColum->ant = auxColum;
             nuevaColum->nroColum = auxColum->nroColum+1;
-            auxTabla->cantColumnas++;
+            auxTabla->cantColumnas = cantColumnas(auxTabla->columna);
             if( auxColum->ant == NULL )  // Verifica si la columna a agregar debe ser PK o no
                 nuevaColum->PK = true;
             res = OK;
@@ -253,6 +256,7 @@ TipoRet dropCol(string nombreTabla, string nombreCol){
                             delete borrar;
                         }
                         ordenarIndiceTupla(auxTabla->tupla);
+                        auxTabla->cantColumnas = cantColumnas(auxTabla->columna);
                     }
                     if( auxColum->sig->PK==true && auxTabla->cantColumnas>1 ){//si hay mas de una columna no se pude borrar la pk
                         cout<<"  La columna \""<<nombreCol<<"\" es Clave Primaria y hay otras columnas que se identifican por ella."<<endl;
@@ -337,13 +341,16 @@ TipoRet deleteFrom(string nombreTabla, string condicion){
                     bool encontrado = false;
                     encontrado = compararCelda(auxCelda, nroColumna, operador, valorCondicion);
                     if( encontrado == true ){
-                        cout<<"  Registro borrado-> "<< auxCelda->sig->info <<":"<< auxCelda->sig->sig->info<<":"<<auxCelda->sig->sig->sig->info  <<endl;
+                        cout<<"> Registro eliminado-> ";
+                        imprimirReg(auxCelda);
                         borrarCeldasTupla(auxCelda);
                         borrarTupla(auxTupla);
                         regAfectados++; //Cuenata los registros encontrados
                     }
                 }
                 if( operador=='-' ){
+                    cout<<"> Registro eliminado-> ";
+                    imprimirReg(auxCelda);
                     borrarCeldasTupla(auxCelda);
                     borrarTupla(auxTupla);
                     regAfectados++;
@@ -427,7 +434,16 @@ TipoRet update(string nombreTabla, string condicionModificar, string columnaModi
 TipoRet printDataTable(string nombreTabla){
     TipoRet res = OK;
     extern ListaTabla LTabla;               //ListaTabla Global
+    if( nombreTabla.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> Falta el nombre de la tabla"<<endl;
+            res = OK;
+            return res;
+    }
     ListaTabla auxTabla = LTabla;
+    if( auxTabla->cantColumnas == 0 || auxTabla->tupla->sig == NULL ){
+        cout<<"> La tabla no tiene columnas o registros aún"<<endl;
+        res = OK;
+    }
     while( auxTabla!=NULL ){
         if( auxTabla->nombre == nombreTabla ){ //Si existe la tabla, para apuntando sobre ella
                 cout<<"  Tabla "<<auxTabla->nombre<<endl;
@@ -541,86 +557,176 @@ void leerComando(ListaTabla LTabla, string comando){
 
     string nombreTabla = traerParametro(listaArg,1); //Obtiene el nombre de la tabla
 
-    if( sentencia=="createTable" ){ //createTable( nombreTabla )
-        res = createTable(nombreTabla);
+    if( sentencia=="createTable" ){
+        nombreTabla = traerParametro(listaArg,1);
+        if( nombreTabla.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> Falta el nombre de la tabla a crear"<<endl;
+            res = ERROR;
+        }
+        if( !nombreTabla.empty() ){
+            res = createTable(nombreTabla);
+        }
         if( res == 0 )
-            cout<< "  Query OK -> Se creo la tabla \""<<nombreTabla<<"\""<<endl<<endl;
+            cout<< "> Query OK: Se creo la tabla \""<<nombreTabla<<"\""<<endl<<endl;
         if( res == 1)
-            cout<< "  Query ERROR -> La tabla "<<nombreTabla<<" ya existe"<<endl<<endl;
+            cout<< "> Query ERROR: No se creo la tabla"<<endl<<endl;
+        return;
     }
 
     if( sentencia=="dropTable" ){ // dropTable( nombreTabla )
-        res = dropTable(nombreTabla);
+        nombreTabla = traerParametro(listaArg,1);
+        if( nombreTabla.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> Falta el nombre de la tabla"<<endl;
+            res = ERROR;
+        }
+        if( !nombreTabla.empty() ){  // Valida que el nombre de la columna no este vacio
+            res = dropTable(nombreTabla);
+        }
         if( res == 0 )
-            cout<< "  Query OK -> La Tabla \""<<nombreTabla<<"\" fue eliminada"<<endl<<endl;
+            cout<< "> Query OK: La Tabla \""<<nombreTabla<<"\" fue eliminada"<<endl<<endl;
         if( res == 1 )
-            cout<< "  Query ERROR -> La tabla \""<<nombreTabla<<"\" no existe"<<endl<<endl;
+            cout<< "> Query ERROR: La tabla \""<<nombreTabla<<"\" no existe"<<endl<<endl;
+        return;
     }
 
     if( sentencia == "addCol" ) {//addCol( nombreTabla, nombreCol )
+        nombreTabla = traerParametro(listaArg,1);
         string nombreColumna = traerParametro(listaArg, 2);//obtiene e nombre de la columna ha agregar
-        res = addCol(nombreTabla, nombreColumna);
+        if( nombreTabla.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> Falta el nombre de la tabla"<<endl;
+            res = ERROR;
+        }
+        if( nombreColumna.empty() ){  // Valida que el nombre de la columna no este vacio
+            cout<<"> Falta el nombre de la columna"<<endl;
+            res = ERROR;
+        }
+        if( !nombreTabla.empty() && !nombreColumna.empty() ){  // Valida que el nombre de la columna no este vacio
+            res = addCol(nombreTabla, nombreColumna);
+        }
         if(  res == 0 )
-            cout<< "  Query OK -> La columna \""<<nombreColumna<<"\" ha sido creada"<<endl<<endl;
+            cout<< "> Query OK: La columna \""<<nombreColumna<<"\" ha sido creada"<<endl<<endl;
         if( res == 1)
-            cout<< "  Query ERROR -> No se puedo crear la columna \""<<nombreColumna<<"\""<<endl<<endl;
+            cout<< "> Query ERROR: No se pudo crear la columna"<<endl<<endl;
         if( res == 2 )
-            cout<< "  Query ERROR -> No se realizo la operacion"<<endl<<endl;
+            cout<< "> Query ERROR: No se realizo la operacion"<<endl<<endl;
+        return;
     }
 
     if( sentencia == "dropCol" ){ //   dropCol( nombreTabla, nombreCol)
+        nombreTabla = traerParametro(listaArg,1);
         string nombreColumna = traerParametro(listaArg, 2);
-        res = dropCol(nombreTabla, nombreColumna);
+        if( nombreTabla.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> Falta el nombre de la tabla a crear"<<endl;
+            res = ERROR;
+        }
+        if( nombreColumna.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> Falta el nombre de la columna a eliminar"<<endl;
+            res = ERROR;
+        }
+        if( !nombreTabla.empty() && !nombreColumna.empty() ){
+            res = dropCol(nombreTabla, nombreColumna);
+        }
         if(  res == 0 )
-            cout<< "  Query OK -> La columna \""<<nombreColumna<<"\" ha sido eliminada"<<endl<<endl;
+            cout<< "> Query OK: La columna \""<<nombreColumna<<"\" ha sido eliminada"<<endl<<endl;
         if( res == 1)
-            cout<< "  Query ERROR -> No se puedo eliminar la columna \""<<nombreColumna<<"\""<<endl<<endl;
+            cout<< "> Query ERROR: No se pudo eliminar la columna"<<endl<<endl;
         if( res == 2 )
-            cout<< "  Query ERROR -> No se realizo la operacion"<<endl<<endl;
+            cout<< "> Query ERROR: No se realizo la operacion"<<endl<<endl;
+        return;
     }
 
     if( sentencia == "insertInto" ){// insertInto( nombreTabla,valoresTupla")
+        nombreTabla = traerParametro(listaArg,1);
         string valoresTupla = traerParametro(listaArg, 2);
-        res = insertInto(nombreTabla, valoresTupla);
+        if( nombreTabla.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> Falta el nombre de la tabla a crear"<<endl;
+            res = ERROR;
+        }
+        if( valoresTupla.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> No agrego ningun valor"<<endl;
+            res = ERROR;
+        }
+        if( !nombreTabla.empty() && !valoresTupla.empty() ){
+            res = insertInto(nombreTabla, valoresTupla);
+        }
         if(  res == 0 )
-            cout<< "  Query OK -> Nuevo resitro en la tabla \""<<nombreTabla<<"\""<<endl<<endl;
+            cout<< "> Query OK: Nuevo resitro en la tabla \""<<nombreTabla<<"\""<<endl<<endl;
         if( res == 1)
-            cout<< "  Query ERROR -> No se puedo agregar el registro en la tabla \""<<nombreTabla<<"\""<<endl<<endl;
+            cout<< "> Query ERROR: No se puedo agregar el registro en la tabla \""<<nombreTabla<<"\""<<endl<<endl;
         if( res == 2 )
-            cout<< "  Query ERROR -> No se realizo la operacion"<<endl<<endl;
+            cout<< "> Query ERROR: No se realizo la operacion"<<endl<<endl;
+        return;
 
     }
+
     if( sentencia == "deleteFrom" ){ //deleteFrom( nombreTabla, condicionEliminar )
+        nombreTabla = traerParametro(listaArg,1);
         string condicionEliminar = traerParametro(listaArg, 2);
-        res = deleteFrom(nombreTabla, condicionEliminar);
+        if( nombreTabla.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> Falta el nombre de la tabla"<<endl;
+            res = ERROR;
+        }
+        if( condicionEliminar.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> No agrego ninguna condicion valida"<<endl;
+            cout<<"> Puede utilizar la ayuda escrbiendo la palabra 'help'"<<endl;
+            res = ERROR;
+        }
+        if( !nombreTabla.empty() && !condicionEliminar.empty() ){
+            res = deleteFrom(nombreTabla, condicionEliminar);
+        }
         if(  res == 0 )
-            cout<< "  Query OK "<<endl<<endl;
+            cout<< "> Query OK "<<endl<<endl;
         if( res == 1)
-            cout<< "  Query ERROR -> Se produjo un error al intentar eliminar registros"<<endl<<endl;
+            cout<< "> Query ERROR: Se produjo un error al intentar eliminar registros"<<endl<<endl;
         if( res == 2 )
-            cout<< "  Query ERROR -> No se realizo la operacion"<<endl<<endl;
+            cout<< "> Query ERROR: No se realizo la operacion"<<endl<<endl;
+        return;
 
     }
     if( sentencia == "update" ){ // update( nombreTabla, condicionModificar, columnaModificar, valorModificar)
+        nombreTabla = traerParametro(listaArg,1);
         string condModificar = traerParametro(listaArg, 2);
         string columna = traerParametro(listaArg, 3);
         string valoModificar = traerParametro(listaArg, 4);
-        res = update(nombreTabla, condModificar, columna, valoModificar);
+        if( nombreTabla.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> Falta el nombre de la tabla"<<endl;
+            res = ERROR;
+        }
+        if( condModificar.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> No agrego ninguna condicion valida"<<endl;
+            cout<<"> Puede utilizar la ayuda escrbiendo la palabra 'help'"<<endl;
+            res = ERROR;
+        }
+        if( valoModificar.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> No especifico el nuevo valor"<<endl;
+            res = ERROR;
+        }
+        if( columna.empty() ){  // Valida que el nombre de la tabla no este vacio
+            cout<<"> No especifico la columna a actulizar"<<endl;
+            res = ERROR;
+        }
+        if( !nombreTabla.empty() && !condModificar.empty() && !columna.empty() && !valoModificar.empty() ){
+            res = update(nombreTabla, condModificar, columna, valoModificar);
+        }
         if(  res == 0 )
-            cout<< "  Query OK"<<endl<<endl;
+            cout<< "> Query OK"<<endl<<endl;
         if( res == 1)
-            cout<< "  Query ERROR -> Error al actulizar el registro"<<endl<<endl;
+            cout<< "> Query ERROR: Error al actulizar el registro"<<endl<<endl;
         if( res == 2 )
-            cout<< "  Query ERROR -> No se realizo la operacion"<<endl<<endl;
+            cout<< "> Query ERROR: No se realizo la operacion"<<endl<<endl;
+        return;
     }
 
     if( sentencia == "printDataTable" ){  // printDataTable( nombreTabla );
+        nombreTabla = traerParametro(listaArg,1);
         res = printDataTable(nombreTabla);
         if( res == 0 )
-            cout<< "  Query OK"<<endl<<endl;
+            cout<< "> Query OK"<<endl<<endl;
         if( res == 1 )
-            cout<< "  Query ERROR -> No se pudo mostrar la tabla\""<< nombreTabla <<"\""<<endl<<endl;
+            cout<< "> Query ERROR: No se pudo mostrar la tabla"<<endl<<endl;
+        return;
     }
+
     if( sentencia == "help"  )//  mostrarAyuda()
         mostrarAyuda();
     if(sentencia!="createTable" && sentencia!="dropTable" && sentencia!="addCol" && sentencia!="dropCol" && sentencia!="insertInto" && sentencia!="deleteFrom" && sentencia!="update" && sentencia!="printDataTable" && sentencia!="help" && sentencia!="exit" )
@@ -628,7 +734,11 @@ void leerComando(ListaTabla LTabla, string comando){
 }
 
 //Obtiene el parametro en la posicion n de la lista. Nota: debe recibir un n valido
+//Obtiene el parametro en la posicion n de la lista. Nota: debe recibir un n valido
 string traerParametro(ListaArg L, int n){
+    string res="";
+    if( L == NULL )
+        return res;
     if( L!=NULL && L->pos!=n )
         return traerParametro(L->sig, n);
     if( L!=NULL && L->pos == n )
@@ -1025,3 +1135,41 @@ void ordenarNroCelda(ListaCelda &auxCelda){
 	}
 }
 
+//Cuenta la cantidad de columnas que tiene una tabla
+int cantColumnas(ListaColum L){
+    if( L == NULL )
+        return 0;
+    if( L->nroColum == 0 )
+        return cantColumnas(L->sig);
+    else
+        return ( 1 + (cantColumnas(L->sig)));
+}
+
+void agregarColumna(ListaColum L, string nombre){
+    while( L->sig!=NULL)
+        L = L->sig;
+    ListaColum nuevaColum = new nodoListaColum;
+    L->sig = nuevaColum;
+    nuevaColum->nombre = nombre;
+    nuevaColum->sig = NULL;
+    nuevaColum->ant = L;
+    nuevaColum->nroColum = nuevaColum->ant->nroColum+1;
+    if( L->ant == NULL )  // Verifica si la columna a agregar debe ser PK o no
+        nuevaColum->PK = true;
+}
+
+void imprimirReg(ListaCelda LC){
+    while( LC->sig != NULL ){
+        LC = LC->sig;
+        if( LC->ant->ant == NULL )
+            cout<<"  "<< LC->info;
+        if( LC->nroCelda > 1 && LC->sig != NULL )
+            cout<<":"<< LC->info;
+        if( LC->sig == NULL && LC->nroCelda > 1){
+            cout<<":"<< LC->info <<endl;
+        continue;
+        }
+        if( LC->sig == NULL )
+            cout<<endl;
+    }
+}
